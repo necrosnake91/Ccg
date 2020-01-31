@@ -108,8 +108,9 @@ PURE_r1_data <- width_nucleotideAnalysis(Pure_EV_r1)
 PURE_r2_data <- width_nucleotideAnalysis(Pure_EV_r2)
 ```
 
-Lo que se observa en estos gráficos es que la mayoría de las secuencias limpias tiene un tamaño cercano 20 nt. Sin embargo, la muestra MODEK_EV_r1 presentó un comportamiento distinto ya que se observaron dos picos debido a que la muestra se encuentra degradada. Asimismo, de acuerdo a la abundancia del primer nucleotido en cada una de las secuencias se observa que aquellas provenientes de las vesículas hay un mayor predominio de Guanina
+Lo que se observa en estos gráficos es que la mayoría de las secuencias limpias tiene un tamaño cercano 20 nt. Sin embargo, la muestra MODEK_EV_r1 presentó un comportamiento distinto ya que se observaron dos picos debido a que la muestra se encuentra degradada. Asimismo, de acuerdo a la abundancia del primer nucleotido en cada una de las secuencias, se observa que aquellas provenientes de las vesículas hay un mayor predominio de Guanina como primer nucleotido. Este resultado concuerda con lo reportado para este organismo.
 ```{r echo=F}
+par(mfrow = c(4, 2))
 barplot_first_nt(Ctrl_r1_data) +
   ggtitle("MODEK_ctrl_r1")
 barplot_first_nt(Ctrl_r2_data) +
@@ -126,4 +127,22 @@ barplot_first_nt(PURE_r2_data) +
   ggtitle("PURE_EV_r2")
 ```
 
+Ya que corroboramos la ausencia de adaptadores de Ilumina en las secuencias, se procedió a realizar el alineamiento de las secuencias con respecto al genoma de *Heligmosomoides bakeri*. Para ello se empleó el programa ```Bowtie``` (v1.2.3) el cuál es un alineador. Previamente a realizar el alineamiento, es necesario generar la secuencia de referencia para este genoma.
+```{bash engine.opts='-l', error = T, eval = F}
+bowtie-build Bowtie/Heligmosomoides_bakeri.fa.gz hbak
+```
+
+Una vez generada la secuencia de referencia se procedió a realizar el alineamiento de las lecturas limpias.
+```{bash engine.opts='-l', error = T, eval = F}
+for i in Data/*lane.fq.gz; do
+echo $i
+bowtie -S -v 1 -k 1 -q Bowtie/hbak $i $i.aligned.sam
+echo $i.aligned.sam
+printf "\n"
+done
+```
+
+```{bash}
+
+```
 
