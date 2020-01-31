@@ -1,0 +1,152 @@
+"0","knitr::opts_chunk$set(echo = TRUE)"
+"2","Warning message:
+"
+"2","package ‘Biostrings’ was built under R version 3.5.2 
+"
+"0","library(knitr)"
+"2","package ‘knitr’ was built under R version 3.5.2"
+"0","library(ggplot2)"
+"2","package ‘ggplot2’ was built under R version 3.5.2"
+"0","library(Biobase)"
+"2","Welcome to Bioconductor
+
+    Vignettes contain introductory material; view with 'browseVignettes()'. To cite Bioconductor, see
+    'citation(""Biobase"")', and for packages 'citation(""pkgname"")'.
+
+"
+"0","library(Biostrings)"
+"0","library(gridExtra)"
+"2","
+Attaching package: ‘gridExtra’
+
+"
+"2","The following object is masked from ‘package:Biobase’:
+
+    combine
+
+"
+"2","The following object is masked from ‘package:BiocGenerics’:
+
+    combine
+
+"
+"0","library(IRanges)"
+"0","library(GenomicRanges)"
+"2","Loading required package: GenomeInfoDb
+"
+"2","package ‘GenomeInfoDb’ was built under R version 3.5.2"
+"0","library(rtracklayer)"
+"2","package ‘rtracklayer’ was built under R version 3.5.2"
+"0","library(Rsamtools)"
+"2","package ‘Rsamtools’ was built under R version 3.5.2"
+"0","library(GenomicAlignments)"
+"2","package ‘GenomicAlignments’ was built under R version 3.5.2"
+"2","Loading required package: SummarizedExperiment
+"
+"2","Loading required package: DelayedArray
+"
+"2","Loading required package: matrixStats
+"
+"2","package ‘matrixStats’ was built under R version 3.5.2"
+"2","
+Attaching package: ‘matrixStats’
+
+"
+"2","The following objects are masked from ‘package:Biobase’:
+
+    anyMissing, rowMedians
+
+"
+"2","Loading required package: BiocParallel
+"
+"2","package ‘BiocParallel’ was built under R version 3.5.2"
+"2","
+Attaching package: ‘DelayedArray’
+
+"
+"2","The following objects are masked from ‘package:matrixStats’:
+
+    colMaxs, colMins, colRanges, rowMaxs, rowMins, rowRanges
+
+"
+"2","The following object is masked from ‘package:Biostrings’:
+
+    type
+
+"
+"2","The following objects are masked from ‘package:base’:
+
+    aperm, apply
+
+"
+"0","library(dplyr)"
+"2","package ‘dplyr’ was built under R version 3.5.2"
+"2","
+Attaching package: ‘dplyr’
+
+"
+"2","The following objects are masked from ‘package:GenomicAlignments’:
+
+    first, last
+
+"
+"2","The following object is masked from ‘package:matrixStats’:
+
+    count
+
+"
+"2","The following objects are masked from ‘package:GenomicRanges’:
+
+    intersect, setdiff, union
+
+"
+"2","The following object is masked from ‘package:GenomeInfoDb’:
+
+    intersect
+
+"
+"2","The following object is masked from ‘package:gridExtra’:
+
+    combine
+
+"
+"2","The following object is masked from ‘package:Biobase’:
+
+    combine
+
+"
+"2","The following objects are masked from ‘package:Biostrings’:
+
+    collapse, intersect, setdiff, setequal, union
+
+"
+"2","The following object is masked from ‘package:XVector’:
+
+    slice
+
+"
+"2","The following objects are masked from ‘package:IRanges’:
+
+    collapse, desc, intersect, setdiff, slice, union
+
+"
+"2","The following objects are masked from ‘package:S4Vectors’:
+
+    first, intersect, rename, setdiff, setequal, union
+
+"
+"2","The following objects are masked from ‘package:BiocGenerics’:
+
+    combine, intersect, setdiff, union
+
+"
+"2","The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+"
+"2","The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+"
