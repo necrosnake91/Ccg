@@ -147,7 +147,7 @@ done
 ```
 Se observó que el mayor porcentaje de alineamiento se obtuvo en los datos provenientes de las vesículas del nemátodo debido a que se está alineando a su propio genoma. Sin embargo, los porcentajes de alineamiento de los otros datos fueron bajos ya que contienen secuencias específicas del ratón que no se encuentran en el genoma del nemátodo.
 
-```{bash engine.opts='-l', error = T, eval = F}
+```{bash engine.opts='-l', error = T, eval = F, echo=F}
 for file in Data/*.aligned.sam; do
 echo $file
 mv $file ${file//clean.fq.gz./}
@@ -156,7 +156,9 @@ done
 
 Los datos en formato ```.sam``` se convirtieron a formato ```.bam``` empleando ```samtools``` (v1.9)
 
-Para analizar la anotación de las secuencias alineadas, se compararon dichas secuencias con respecto a la anotación del genoma de *Heligmosomoides bakeri*
+Para analizar la anotación de las secuencias alineadas, se compararon dichas secuencias con respecto a la anotación del genoma de *Heligmosomoides bakeri*. Se observó que las lecturas alineadas de las células de ratón al genóma del nemátodo (con y sin tratamiento) sobrelapan en la misma cantidad a las categorías como **mRNA**, **gen**, **exon**, **CDS** y **miRNA**. Lo anterior no tiene relevancia biológica ya que se están comparando datos de especies distantes filogenéticamente.
+Por otro lado, al obtener el sobrelape de las secuencias alineadas del nemátodo con su anotación, encontramos que la cantidad de lecturas que anotan a gen y mRNA es similar. Esto se debe a que en la tabla de anotaciones existe redundancia entre los tipos de anotación. Los rangos de algunas secuencias de estos tipos son muy similares entre sí, de aqui se concluye que en esta anotación gen y mRNA son equivalentes y posiblemente se trate de transcrito primario (intrones y exones). Adicionalmente, la mayoria de las secuencias alineadas, anotan a mRNA, posiblemente se trate de intrones.
+
 ```{r echo=F}
 hbak <- import("SAM/Heligmosomoides_bakeri.gff3.gz")
 mcols(hbak) <- mcols(hbak)[,c("source", "type","ID","Name","rep_name","class")]
@@ -169,25 +171,56 @@ bam_EV_r2 <- "Data/MODEK_EV_r2_100k.aligned.bam"
 bam_PEV_r1 <- "Data/Pure_EV_r1_100k.aligned.bam"
 bam_PEV_r2 <- "Data/Pure_EV_r2_100k.aligned.bam"
 
-mapGR_ctrl_r1 <- GRanges_object(bam_ctr_r1)
-mapGR_ctrl_r2 <- GRanges_object(bam_ctr_r2)
-mapGR_ctrl_r3 <- GRanges_object(bam_ctr_r3)
-mapGR_EV_r1 <- GRanges_object(bam_EV_r1)
-mapGR_EV_r1 <- GRanges_object(bam_EV_r2)
-mapGR_PEV_r1 <- GRanges_object(bam_PEV_r1)
-mapGR_PEV_r2 <- GRanges_object(bam_PEV_r2)
-
-mcols(hbak)$counts = countOverlaps(hbak, mapGR_PEV_r1)
-typeCounts <- aggregate(mcols(hbak)$counts, by=list("type"=mcols(hbak)$type), sum)
-
-counts <- typeCounts$x
-names(counts) <- typeCounts$type
-barplot(counts)
-
 GRanges_object <- function(bam) {
   bamAlign <- GenomicAlignments::readGAlignments(bam)
   mapGR <- as(bamAlign, "GRanges")
   return(mapGR)
 }
+
+mapGR_ctrl_r1 <- GRanges_object(bam_ctr_r1)
+mapGR_ctrl_r2 <- GRanges_object(bam_ctr_r2)
+mapGR_ctrl_r3 <- GRanges_object(bam_ctr_r3)
+mapGR_EV_r1 <- GRanges_object(bam_EV_r1)
+mapGR_EV_r2 <- GRanges_object(bam_EV_r2)
+mapGR_PEV_r1 <- GRanges_object(bam_PEV_r1)
+mapGR_PEV_r2 <- GRanges_object(bam_PEV_r2)
+
+mcols(hbak)$counts_ctrl1 <- countOverlaps(hbak, mapGR_ctrl_r1)
+mcols(hbak)$counts_ctrl2 <- countOverlaps(hbak, mapGR_ctrl_r2)
+mcols(hbak)$counts_ctrl3 <- countOverlaps(hbak, mapGR_ctrl_r3)
+mcols(hbak)$counts_ev1 <- countOverlaps(hbak, mapGR_EV_r1)
+mcols(hbak)$counts_ev2 <- countOverlaps(hbak, mapGR_EV_r2)
+mcols(hbak)$counts_pev1 <- countOverlaps(hbak, mapGR_PEV_r1)
+mcols(hbak)$counts_pev2 <- countOverlaps(hbak, mapGR_PEV_r2)
+
+
+typeCounts_ctrl1 <- aggregate(mcols(hbak)$counts_ctrl1, by=list("type"=mcols(hbak)$type), sum)
+counts_ctr1 <- typeCounts_ctrl1$x
+names(counts_ctr1) <- typeCounts_ctrl1$type
+barplot(counts_ctr1[c("gene", "mRNA", "exon", "CDS", "rep_unk_S", "rep_dna_S", "rep_rna_S", "miRNA")])
+
+typeCounts_ev1 <- aggregate(mcols(hbak)$counts_ev1, by=list("type"=mcols(hbak)$type), sum)
+counts_ev_2 <- typeCounts_ev1$x
+names(counts_ev_2) <- typeCounts_ev1$type
+barplot(counts_ev_2[c("gene", "mRNA", "exon", "CDS", "rep_unk_S", "rep_dna_S", "rep_rna_S", "miRNA")])
+
+typeCounts_pev1 <- aggregate(mcols(hbak)$counts_pev1, by=list("type"=mcols(hbak)$type), sum)
+counts_pev_1 <- typeCounts_pev1$x
+names(counts_pev_1) <- typeCounts_pev1$type
+barplot(sort.default(counts_pev_1[c("gene", "mRNA", "exon", "CDS", "rep_unk_S", "rep_dna_S", "rep_rna_S", "miRNA")]))
 ```
 
+Con los resultados anteriores, se decidió trabajar con las secuencias alineadas provenientes de las vesículas.
+El número y porcentaje de bases que tienen alguna anotación traslapada de acuerdo a la anotación fue 
+
+```{r echo=F}
+
+overlaped_hbak <- (hbak[overlapsAny(hbak, mapGR_PEV_r1)])
+
+base_overlaped <- data.frame('overlaped'=sum(overlapsAny(hbak, mapGR_PEV_r1))/length(hbak) *100)
+
+print(paste("El numero de bases traslapadas es de:",length(overlaped_hbak),
+            "y el porcentaje es de:", base_overlaped[1,1], "%"))
+
+
+```
