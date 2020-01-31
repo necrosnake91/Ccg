@@ -56,11 +56,16 @@ Por ello fue necesario aplicar recorte o "trimming" de las secuencias de los ada
 for i in Data/*.fq.gz; do
 reaper -geom no-bc -3pa TGGAATTCTCGGGTGCCAAGG -i $i -basename $i 
 done
+
+for file in Data/*.fq.gz.lane.clean.gz; do
+echo $file
+mv $file ${file//fq.gz.lane.clean/clean.fq}
+done
 ```
 
 Las bibliotecas procesadas por reaper, fueron analizadas nuevamente con ```fastqc``` para corroborar la ausencia de adaptadores.
 ```{bash engine.opts='-l', error = T, eval = F}
-for i in Data/*lane.fq.gz; do
+for i in Data/*.clean.fq.gz; do
 fastqc -o fastqcoutput/ $i
 done
 ```
@@ -69,13 +74,13 @@ Se observó que el recorte fue exitoso ya que las bibliotecas limpias no present
 
 Posteriormente, los datos ```*lane.fq.gz``` generados se exportaron a R para realizar analizar la distribución de las lecturas de acuerdo a su tamaño y el contenido de bases en cada una.
 ```{r echo=F}
-MODEK_ctrl_r1 <-  Biostrings::readDNAStringSet("Data/MODEK_ctrl_r1_100k.fq.gz.lane.fq.gz", format = "fastq")
-MODEK_ctrl_r2 <-  Biostrings::readDNAStringSet("Data/MODEK_ctrl_r2_100k.fq.gz.lane.fq.gz", format = "fastq")
-MODEK_ctrl_r3 <-  Biostrings::readDNAStringSet("Data/MODEK_ctrl_r3_100k.fq.gz.lane.fq.gz", format = "fastq")
-MODEK_EV_r1 <-  Biostrings::readDNAStringSet("Data/MODEK_EV_r1_100k.fq.gz.lane.fq.gz", format = "fastq")
-MODEK_EV_r2 <-  Biostrings::readDNAStringSet("Data/MODEK_EV_r2_100k.fq.gz.lane.fq.gz", format = "fastq")
-Pure_EV_r1 <-  Biostrings::readDNAStringSet("Data/Pure_EV_r1_100k.fq.gz.lane.fq.gz", format = "fastq")
-Pure_EV_r2 <-  Biostrings::readDNAStringSet("Data/Pure_EV_r2_100k.fq.gz.lane.fq.gz", format = "fastq")
+MODEK_ctrl_r1 <-  Biostrings::readDNAStringSet("Data/MODEK_ctrl_r1_100k.clean.fq.gz", format = "fastq")
+MODEK_ctrl_r2 <-  Biostrings::readDNAStringSet("Data/MODEK_ctrl_r2_100k.clean.fq.gz", format = "fastq")
+MODEK_ctrl_r3 <-  Biostrings::readDNAStringSet("Data/MODEK_ctrl_r3_100k.clean.fq.gz", format = "fastq")
+MODEK_EV_r1 <-  Biostrings::readDNAStringSet("Data/MODEK_EV_r1_100k.clean.fq.gz", format = "fastq")
+MODEK_EV_r2 <-  Biostrings::readDNAStringSet("Data/MODEK_EV_r2_100k.clean.fq.gz", format = "fastq")
+Pure_EV_r1 <-  Biostrings::readDNAStringSet("Data/Pure_EV_r1_100k.clean.fq.gz", format = "fastq")
+Pure_EV_r2 <-  Biostrings::readDNAStringSet("Data/Pure_EV_r2_100k.clean.fq.gz", format = "fastq")
 
 width_nucleotideAnalysis <- function(reaper_biostring){
   
@@ -134,15 +139,55 @@ bowtie-build Bowtie/Heligmosomoides_bakeri.fa.gz hbak
 
 Una vez generada la secuencia de referencia se procedió a realizar el alineamiento de las lecturas limpias.
 ```{bash engine.opts='-l', error = T, eval = F}
-for i in Data/*lane.fq.gz; do
+for i in Data/*.clean.fq.gz; do
 echo $i
 bowtie -S -v 1 -k 1 -q Bowtie/hbak $i $i.aligned.sam
-echo $i.aligned.sam
-printf "\n"
+done
+
+```
+Se observó que el mayor porcentaje de alineamiento se obtuvo en los datos provenientes de las vesículas del nemátodo debido a que se está alineando a su propio genoma. Sin embargo, los porcentajes de alineamiento de los otros datos fueron bajos ya que contienen secuencias específicas del ratón que no se encuentran en el genoma del nemátodo.
+
+```{bash engine.opts='-l', error = T, eval = F}
+for file in Data/*.aligned.sam; do
+echo $file
+mv $file ${file//clean.fq.gz./}
 done
 ```
 
-```{bash}
+Los datos en formato ```.sam``` se convirtieron a formato ```.bam``` empleando ```samtools``` (v1.9)
 
+Para analizar la anotación de las secuencias alineadas, se compararon dichas secuencias con respecto a la anotación del genoma de *Heligmosomoides bakeri*
+```{r echo=F}
+hbak <- import("SAM/Heligmosomoides_bakeri.gff3.gz")
+mcols(hbak) <- mcols(hbak)[,c("source", "type","ID","Name","rep_name","class")]
+
+bam_ctr_r1 <- "Data/MODEK_ctrl_r1_100k.aligned.bam"
+bam_ctr_r2 <- "Data/MODEK_ctrl_r2_100k.aligned.bam"
+bam_ctr_r3 <- "Data/MODEK_ctrl_r3_100k.aligned.bam"
+bam_EV_r1 <- "Data/MODEK_EV_r1_100k.aligned.bam"
+bam_EV_r2 <- "Data/MODEK_EV_r2_100k.aligned.bam"
+bam_PEV_r1 <- "Data/Pure_EV_r1_100k.aligned.bam"
+bam_PEV_r2 <- "Data/Pure_EV_r2_100k.aligned.bam"
+
+mapGR_ctrl_r1 <- GRanges_object(bam_ctr_r1)
+mapGR_ctrl_r2 <- GRanges_object(bam_ctr_r2)
+mapGR_ctrl_r3 <- GRanges_object(bam_ctr_r3)
+mapGR_EV_r1 <- GRanges_object(bam_EV_r1)
+mapGR_EV_r1 <- GRanges_object(bam_EV_r2)
+mapGR_PEV_r1 <- GRanges_object(bam_PEV_r1)
+mapGR_PEV_r2 <- GRanges_object(bam_PEV_r2)
+
+mcols(hbak)$counts = countOverlaps(hbak, mapGR_PEV_r1)
+typeCounts <- aggregate(mcols(hbak)$counts, by=list("type"=mcols(hbak)$type), sum)
+
+counts <- typeCounts$x
+names(counts) <- typeCounts$type
+barplot(counts)
+
+GRanges_object <- function(bam) {
+  bamAlign <- GenomicAlignments::readGAlignments(bam)
+  mapGR <- as(bamAlign, "GRanges")
+  return(mapGR)
+}
 ```
 
