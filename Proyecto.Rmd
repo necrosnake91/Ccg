@@ -36,22 +36,22 @@ En un trabajo previo se demostró que el contenido las vesículas secretadas por
 Dentro de los flujos de trabajo de secuenciación, uno de los primeros pasos a ejecutar es el análisis de de la calidad de las lecturas secuenciadas. Para ello se utilizó el programa ```fastqc``` (v11.9) el cual reporta, de manera global, la calidad de las bases en cada una de las secuencias (expresada en escala phred), el tamaño de las lecturas en cada librería, el porcentaje de GC, la presencia de secuencias sobrerrepresentadas en la librería, entre otros parámetros.
 
 A continuación, se realizó el análisis con ```fastqc``` en cada una de las muestras
-```{bash engine.opts='-l', error = T, eval = F}
+```{bash engine.opts='-l', error = T, eval = F, echo = F}
 ###Analyze quality of raw reads
 ##Run fastqc for every fq.gz file
 fastqc -o fastqcoutput/ Data/*.fq.gz
 ```
 
-En este análisis se observó que la calidad de las muestras fue óptima en cada una de las muestras.
+En este análisis se observó que la calidad de las librerías fue óptima en cada una de las muestras.
 ![Quality_fqc](Quality_fqc.png)
 
-Sin embargo, en las librerías **MODEK_EV** se observaron dos picos con respecto al % de GC, lo cual nos indica la posible presencia de secuencias con distinto origen.
+Un aspecto a destacar fue que en las librerías **MODEK_EV** se observaron dos picos con respecto al % de GC, lo cual nos indica la posible presencia de secuencias que provienen de distinto origen. Este resultado nos pudiera indica la presencia de  secuencias de ratón y de las vesículas producidas por el nemátodo.
 ![GC_content](GC_fqc.png)
-Adicionalmente, en todas las muestras se detectó la presencia de adaptadores de Ilumina a partir de los nucleótidos 18 - 22 (tamaño aproximado de un RNA pequeño). Este resultado es debido a que el tamaño de las lecturas secuenciadas fue de 50 nt y del nc 18-22 al 50 se comenzaron a secuenciar los adaptadores.
+Adicionalmente, en todas las muestras se detectó la presencia de adaptadores de Ilumina a partir de los nucleótidos 18 - 22 hacia el extremo 3'. Ya que los RNAs pequeños tienen una longitud aproximada de 20 nt y el tamaño de las lecturas secuenciadas fue de 50 nt, es de probable que a partir del nt 20 se comenzaron a secuenciar adaptadores.
 ![Adapter](Adapter_fqc.png)
 
-Por ello fue necesario aplicar recorte o "trimming" de las secuencias de los adaptadores a las lecturas. Se empleó el programa ```reaper```(v16.098)
-```{bash engine.opts='-l', error = T, eval = F}
+Por ello fue necesario realizar recorte o "trimming" de las secuencias de los adaptadores a las lecturas. Este proceso es necesario ya que de no realizarlo, durante un alineamiento se podrían obtener porcentajes bajos debido a que las secuencias de los adaptadores no se encuentran en el genoma a alinear. Para realizar el recorte de los adaptadores se empleó el programa ```reaper```(v16.098)
+```{bash engine.opts='-l', error = T, eval = F, echo = F}
 ###Cut the adapters in 3' end using Reaper
 for i in Data/*.fq.gz; do
 reaper -geom no-bc -3pa TGGAATTCTCGGGTGCCAAGG -i $i -basename $i 
@@ -63,8 +63,8 @@ mv $file ${file//fq.gz.lane.clean/clean.fq}
 done
 ```
 
-Las bibliotecas procesadas por reaper, fueron analizadas nuevamente con ```fastqc``` para corroborar la ausencia de adaptadores.
-```{bash engine.opts='-l', error = T, eval = F}
+Las bibliotecas procesadas por **reaper**, fueron analizadas nuevamente con **fastqc** para corroborar la ausencia de adaptadores.
+```{bash engine.opts='-l', error = T, eval = F, echo =F}
 for i in Data/*.clean.fq.gz; do
 fastqc -o fastqcoutput/ $i
 done
@@ -72,7 +72,7 @@ done
 Se observó que el recorte fue exitoso ya que las bibliotecas limpias no presentaron adaptadores.
 ![No_adapt](No_adapter.png)
 
-Posteriormente, los datos ```*lane.fq.gz``` generados se exportaron a R para realizar analizar la distribución de las lecturas de acuerdo a su tamaño y el contenido de bases en cada una.
+Posteriormente, los datos generados se exportaron a R para analizar la distribución de las lecturas de acuerdo a su tamaño.
 ```{r echo=F}
 MODEK_ctrl_r1 <-  Biostrings::readDNAStringSet("Data/MODEK_ctrl_r1_100k.clean.fq.gz", format = "fastq")
 MODEK_ctrl_r2 <-  Biostrings::readDNAStringSet("Data/MODEK_ctrl_r2_100k.clean.fq.gz", format = "fastq")
@@ -113,7 +113,7 @@ PURE_r1_data <- width_nucleotideAnalysis(Pure_EV_r1)
 PURE_r2_data <- width_nucleotideAnalysis(Pure_EV_r2)
 ```
 
-Lo que se observa en estos gráficos es que la mayoría de las secuencias limpias tiene un tamaño cercano 20 nt. Sin embargo, la muestra MODEK_EV_r1 presentó un comportamiento distinto ya que se observaron dos picos debido a que la muestra se encuentra degradada. Asimismo, de acuerdo a la abundancia del primer nucleotido en cada una de las secuencias, se observa que aquellas provenientes de las vesículas hay un mayor predominio de Guanina como primer nucleotido. Este resultado concuerda con lo reportado para este organismo.
+Lo que se observa en los gráficos es que la mayoría de las secuencias limpias tiene un tamaño cercano 20 nt, resultado que concuerda con lo obtenido en el análisis anterior. Sin embargo, la muestra **MODEK_EV_r1** presentó un comportamiento distinto, ya que se observaron dos picos debido a que la muestra se encuentra degradada. Asimismo, de acuerdo a la abundancia del primer nucleotido en cada una de las secuencias, se observa que en aquellas provenientes de las vesículas del nemátodo hay un mayor predominio de Guanina como primer nucleotido. Este resultado concuerda con lo reportado para este organismo.
 ```{r echo=F}
 par(mfrow = c(4, 2))
 barplot_first_nt(Ctrl_r1_data) +
@@ -133,12 +133,12 @@ barplot_first_nt(PURE_r2_data) +
 ```
 
 Ya que corroboramos la ausencia de adaptadores de Ilumina en las secuencias, se procedió a realizar el alineamiento de las secuencias con respecto al genoma de *Heligmosomoides bakeri*. Para ello se empleó el programa ```Bowtie``` (v1.2.3) el cuál es un alineador. Previamente a realizar el alineamiento, es necesario generar la secuencia de referencia para este genoma.
-```{bash engine.opts='-l', error = T, eval = F}
+```{bash engine.opts='-l', error = T, eval = F, echo = F}
 bowtie-build Bowtie/Heligmosomoides_bakeri.fa.gz hbak
 ```
 
-Una vez generada la secuencia de referencia se procedió a realizar el alineamiento de las lecturas limpias.
-```{bash engine.opts='-l', error = T, eval = F}
+Una vez generado el índice, se procedió a realizar el alineamiento de las lecturas limpias.
+```{bash engine.opts='-l', error = T, eval = F, echo = F}
 for i in Data/*.clean.fq.gz; do
 echo $i
 bowtie -S -v 1 -k 1 -q Bowtie/hbak $i $i.aligned.sam
@@ -146,6 +146,7 @@ done
 
 ```
 Se observó que el mayor porcentaje de alineamiento se obtuvo en los datos provenientes de las vesículas del nemátodo debido a que se está alineando a su propio genoma. Sin embargo, los porcentajes de alineamiento de los otros datos fueron bajos ya que contienen secuencias específicas del ratón que no se encuentran en el genoma del nemátodo.
+Adicionalmente, se decidió alinear los datos al génoma del ratón. De este último alineamineto obtuvimos altos porcentajes de lecturas alineadas (mayor al 90%) en las muestras provenientes de las células de ratón.
 
 ```{bash engine.opts='-l', error = T, eval = F, echo=F}
 for file in Data/*.aligned.sam; do
@@ -156,8 +157,8 @@ done
 
 Los datos en formato ```.sam``` se convirtieron a formato ```.bam``` empleando ```samtools``` (v1.9)
 
-Para analizar la anotación de las secuencias alineadas, se compararon dichas secuencias con respecto a la anotación del genoma de *Heligmosomoides bakeri*. Se observó que las lecturas alineadas de las células de ratón al genóma del nemátodo (con y sin tratamiento) sobrelapan en la misma cantidad a las categorías como **mRNA**, **gen**, **exon**, **CDS** y **miRNA**. Lo anterior no tiene relevancia biológica ya que se están comparando datos de especies distantes filogenéticamente.
-Por otro lado, al obtener el sobrelape de las secuencias alineadas del nemátodo con su anotación, encontramos que la cantidad de lecturas que anotan a gen y mRNA es similar. Esto se debe a que en la tabla de anotaciones existe redundancia entre los tipos de anotación. Los rangos de algunas secuencias de estos tipos son muy similares entre sí, de aqui se concluye que en esta anotación gen y mRNA son equivalentes y posiblemente se trate de transcrito primario (intrones y exones). Adicionalmente, la mayoria de las secuencias alineadas, anotan a mRNA, posiblemente se trate de intrones.
+Para analizar la anotación genómica de las secuencias alineadas, se compararon dichas secuencias con respecto a la anotación del genoma de *Heligmosomoides bakeri*. Se observó que las lecturas alineadas de las células de ratón al genóma del nemátodo (con y sin tratamiento) sobrelapan en la misma cantidad a las categorías como **mRNA**, **gen**, **exon**, **CDS** y **miRNA**. Lo anterior no tiene relevancia biológica ya que se están comparando datos de especies distantes filogenéticamente.
+Por otro lado, al obtener el sobrelape de las secuencias alineadas del nemátodo con su anotación, encontramos que la cantidad de lecturas que anotan a gen y mRNA es similar. Esto se debe a que en la tabla de anotaciones existe redundancia entre los tipos de anotación. Los rangos de algunas secuencias de estos tipos son muy similares entre sí, de aqui se concluye que en esta anotación gen y mRNA son equivalentes y posiblemente se trate de transcrito primario (intrones y exones). Un aspecto que nos llamó la atención fue que la mayoría de estas secuencias anotan a mRNA y nosotros esperabamos una mayor cantidad de secuencias anotando a miRNAs u otro tipo de secuencias no codificantes. Para explicar este resultado, hipotetizamos que las secuencias contenidas en las vesículas pudieran provenir de intrones (presentes en el mRNA de la anotación). 
 
 ```{r echo=F}
 hbak <- import("SAM/Heligmosomoides_bakeri.gff3.gz")
@@ -193,24 +194,31 @@ mcols(hbak)$counts_ev2 <- countOverlaps(hbak, mapGR_EV_r2)
 mcols(hbak)$counts_pev1 <- countOverlaps(hbak, mapGR_PEV_r1)
 mcols(hbak)$counts_pev2 <- countOverlaps(hbak, mapGR_PEV_r2)
 
+colors_r <- c("#5a2ebe",
+"#1f1530",
+"#77298b",
+"#584d6b",
+"#38298c",
+"#3f2f50",
+"#564081",
+"#341653")
 
 typeCounts_ctrl1 <- aggregate(mcols(hbak)$counts_ctrl1, by=list("type"=mcols(hbak)$type), sum)
 counts_ctr1 <- typeCounts_ctrl1$x
 names(counts_ctr1) <- typeCounts_ctrl1$type
-barplot(counts_ctr1[c("gene", "mRNA", "exon", "CDS", "rep_unk_S", "rep_dna_S", "rep_rna_S", "miRNA")])
+barplot(counts_ctr1[c("gene", "mRNA", "exon", "CDS", "rep_unk_S", "rep_dna_S", "rep_rna_S", "miRNA")], col = colors_r)
 
 typeCounts_ev1 <- aggregate(mcols(hbak)$counts_ev1, by=list("type"=mcols(hbak)$type), sum)
 counts_ev_2 <- typeCounts_ev1$x
 names(counts_ev_2) <- typeCounts_ev1$type
-barplot(counts_ev_2[c("gene", "mRNA", "exon", "CDS", "rep_unk_S", "rep_dna_S", "rep_rna_S", "miRNA")])
+barplot(counts_ev_2[c("gene", "mRNA", "exon", "CDS", "rep_unk_S", "rep_dna_S", "rep_rna_S", "miRNA")], col = colors_r)
 
 typeCounts_pev1 <- aggregate(mcols(hbak)$counts_pev1, by=list("type"=mcols(hbak)$type), sum)
 counts_pev_1 <- typeCounts_pev1$x
 names(counts_pev_1) <- typeCounts_pev1$type
-barplot(sort.default(counts_pev_1[c("gene", "mRNA", "exon", "CDS", "rep_unk_S", "rep_dna_S", "rep_rna_S", "miRNA")]))
+barplot(sort.default(counts_pev_1[c("gene", "mRNA", "exon", "CDS", "rep_unk_S", "rep_dna_S", "rep_rna_S", "miRNA")]), col = colors_r)
 ```
 
-Con los resultados anteriores, se decidió trabajar con las secuencias alineadas provenientes de las vesículas.
 El número y porcentaje de bases que tienen alguna anotación traslapada de acuerdo a la anotación fue 
 
 ```{r echo=F}
