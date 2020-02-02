@@ -232,3 +232,27 @@ print(paste("El numero de bases traslapadas es de:",length(overlaped_hbak),
 
 
 ```
+
+# Ejercicios Sesion 4
+
+Extraemos las secuencias que se son up-regulated en el tratamiento y que tuvieron un valor de FDR significativo (<0.05)
+
+```{r }
+### lista de secuencias up-regulated
+upreg <- rownames(lrt$table)[topTable$logFC > 0 & topTable$FDR < 0.05]; head(upreg)
+```
+
+Con las secuencias que obtuvimos extraemos las lineas correspondiente de la tabla original 
+
+```{r}
+### tabla de secuencias up-regulated
+upregtab <- counts0[row.names(counts0) %in% upreg,]; head(upregtab)
+```
+
+Si graficamos la tabla observamos que la mayoría de las secuencias inician con G.
+Esto concuerda con lo conocido para el parásito y nos hace sospechar que estas secuencias provienen de las vesículas.
+
+```{r echo=F}
+barplot(table(substr(rownames(upregtab),1,1)))
+```
+
