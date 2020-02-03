@@ -146,7 +146,7 @@ done
 
 ```
 Se observó que el mayor porcentaje de alineamiento se obtuvo en los datos provenientes de las vesículas del nemátodo debido a que se está alineando a su propio genoma. Sin embargo, los porcentajes de alineamiento de los otros datos fueron bajos ya que contienen secuencias específicas del ratón que no se encuentran en el genoma del nemátodo.
-Adicionalmente, se decidió alinear los datos al génoma del ratón. De este último alineamineto obtuvimos altos porcentajes de lecturas alineadas (mayor al 90%) en las muestras provenientes de las células de ratón.
+Adicionalmente, se decidió alinear los datos al génoma del ratón. De este último alineamiento obtuvimos altos porcentajes de lecturas alineadas (mayor al 90%) en las muestras provenientes de las células de ratón.
 
 ```{bash engine.opts='-l', error = T, eval = F, echo=F}
 for file in Data/*.aligned.sam; do
@@ -233,9 +233,182 @@ print(paste("El numero de bases traslapadas es de:",length(overlaped_hbak),
 
 ```
 
+<<<<<<< HEAD
 
 Durante el flujo de trabajo de un proyecto de transcriptómica orientado al análisis de expresión diferencial, posterior al alineamiento de las lecturas limpias, es necesario contar el número de lecturas que alinearon a cada una de las regiones mapeadas. Para realizar este proceso, existen una diversidad de programas tales como **kalisto**, **RSEM**, **Cufflinks**, **HtSeq**, entre otros. El resultado de este proceso es la obtención de una matriz de cuentas en donde las columnas representan las condiciones del experimento (controles y taratamiento), los renglones los genes mapeados y las celdas se llenan con las cuentas de cada gen en las condiciones.
 En el presente experimento, no se realizó en clase el proceso de conteo de las lecturas mapeadas. Sin embargo, se nos dio la matriz de conteos de las muestras.
+=======
+# Expresión diferencial
+Para realizar un análisis de expresión diferencial, es primordial eliminar los datos innecesarios y no favorecer las muestras con mayor profundidad de secuenciación. Sin embargo, la eliminación de estos datos depende de las condiciones que utilizamos para cada experimento. Por ejemplo, a partir del archivo con los datos de expresión: all_tally_counts.tab.gz,  al modificar los umbrales de expresión, observamos que tantos datos estamos eliminando de nuestro análisis. Decidimos modificar los umbrales de expresión de 1 a 2, obteniendo que la cantidad de datos eliminados se modifica en aproximadamente un 50% :
+
+```{r}
+#Cargamos Arch
+countFile <- "C:\\Users\\Alberto\\Dropbox\\LCG\\Sem 4\\BIF_II\\Mod_1\\Proyecto\\E_diferencial\\all_tally_counts.tab.gz"
+#leemos como tabla
+counts0 = read.table(countFile)
+```
+
+```{r}
+keep_0 = rowSums(cpm(counts0) >= 1) >= 2
+table(keep_0)
+
+keep = rowSums(cpm(counts0) >= 2) >= 2
+table(keep)
+```
+
+# Consistencia entre réplicas:
+
+Al explorar los datos nos pudimos percatar que las réplicas se mantienen agrupadas, a excepción de las muestras que contenían RNA degradado, asimismo los datos que más se separan en el eje de las x´s son aquellos que provienen de las vesículas purificadas. A pesar de observar lo anterior, se podría considerar trabajar con estos datos. 
+
+```{r}
+counts = counts0[keep,]
+#dim(counts)
+group = factor(sub("_r.+", "", colnames(counts)))
+#group
+#table(group)
+dge = DGEList(counts=counts, group=group)
+#dge
+
+colors = rainbow(length(levels(group)))
+names(colors) = levels(group)
+colors
+plotMDS(dge, col=colors[dge$samples$group], labels=colnames(dge$counts))
+```
+
+# Normalización de los datos
+Al observar los gráficos de los datos normalizados, nos percatamos que los datos provenientes de las vesiculas sesgaron  la normalización del resto de los datos.Este fenómeno se debe a que los datos de las vesículas difieren mucho de los datos de las líneas celulares. En los gráficos se visualiza que el conjunto de puntos de cada muestra no estan centrados con respecto a la línea roja.
+
+Asimismo podemos observar que al realizar la normalización, los datos de las células control y de las células tratadas tienden a agruparse sobre el eje de las x's , mientras que los datos de las vesículas purificadas se mantienen alejados.
+
+```{r}
+dge = calcNormFactors(dge)
+dge$samples
+```
+
+```{r}
+par(mfrow=c(1,2))
+for (i in c(3,4,5,7)) {
+  plotMD(cpm(dge, log=TRUE), column=i)
+  grid(col = "blue")
+  abline(h=0, col='red', lty=2, lwd=2)
+}
+```
+```{r}
+plotMDS(dge, col=colors[dge$samples$group], labels=colnames(dge$counts), main="MDS after normalization factors")
+```
+
+Posteriormente, se realizó nuevamente la normalización de los datos, eliminando las muestras de las vesículas purifcadas y la muestra degradada.Este criterio mejoró notablemente la normalización de los datos, ya que se pudo observar que el conjunto de puntos se encuentra centrado respecto a la línea roja.Asimismo, un aspecto a resaltar de los datos de las células tratadas es la presencia de un pico en el cuadrante superior del gráfico, el anterior puede indicar la presencia de secuencias provenientes de las vesículas.
+
+
+```{r}
+badSamples <- c("MODEK_EV_r1","Pure_EV_r1","Pure_EV_r2")
+#colnames(counts0)
+colnames(counts0) %in% badSamples
+counts <- counts0[,!colnames(counts0) %in% badSamples]
+
+keep = rowSums(cpm(counts) >= 1) >= 2
+table(keep)
+counts <- counts[keep,]
+group = factor(sub("_r.+", "", colnames(counts)))
+group
+dge = DGEList(counts=counts, group=group)
+
+dge = calcNormFactors(dge)
+dge$samples
+```
+
+
+```{r}
+par(mfrow=c(1,2))
+
+for (i in c(2,3,4,5)) {
+  plotMD(cpm(dge, log=TRUE), column=i)
+  grid(col = "blue")
+  abline(h=0, col='red', lty=2, lwd=2)
+}
+```
+
+
+```{r}
+plotMDS(dge, col=colors[dge$samples$group], labels=colnames(dge$counts), main="MDS after removal of samples")
+```
+
+Designamos a que corresponde cada condición,y preparamos una matriz; de esta manera podíamos calcular parámetros de sobre-dispersión, como sabemos esta última puede ser calculada a tres niveles: Common, para el valor representativo de todos los genes;Trended, para los rangos de niveles de expresión y Tagwise, para el valor individual para cada gen.
+
+Lo que realizamos a continuación fue probar las diferentes dispersiones y observar la estimación de los genes con baja y alta expresión. Encontramos que la dispersión es dependiente entre los genes y la relación de varianza entre los mismos es diferente. Con la estimación "Common" observamos cuál es la dispersión común para el conjunto de nuestros datos, es decir pudimos tener noción de la variabilidad de los mismos; lo cual es de vital importancia en casos como estos donde tenemos réplicas. 
+
+Por otra parte, en el caso de la dispersión "tagwise" pudimos determinar la dispersión para cada transcrito. En los gráficos, la dispersión de los datos nos indica la variabilidad entre las réplicas; pero además, la dispersión que presenta cada gen nos esta hablando de su abundancia, pues definimos cuántos genes estan cumpliendo con los criterios que nosotros seleccionamos (activados o reprimidos con un FDR <5%).
+
+
+```{r}
+design = model.matrix(~0+dge$samples$group)
+
+colnames(design) = levels(dge$samples$group)
+
+design
+dge = estimateDisp(dge, design=design, robust=TRUE)
+plotBCV(dge)
+```
+
+
+
+
+```{r}
+contrasts = makeContrasts(
+  "EV_effect" = "MODEK_EV - MODEK_ctrl",
+  levels=dge$design
+)
+
+contrasts
+contrast = contrasts[,1]
+
+contrast
+fit = glmFit(dge, dispersion=dge$common.dispersion)
+
+lrt <- glmLRT(fit, contrast=contrast)
+
+topTags(lrt)
+dt = decideTestsDGE(lrt, adjust.method="BH", p.value=0.05, lfc=0)
+
+table(dt)
+
+```
+
+```{r}
+dim(topTable)
+```
+
+
+```{r}
+deGenes = rownames(lrt)[dt != 0]
+
+plotSmear(lrt, de.tags=deGenes)
+```
+
+
+```{r}
+topTable = topTags(lrt, n=Inf)$table
+
+head(topTable)
+```
+
+```{r}
+print(paste("down-regulated:", sum(topTable$logFC < 0 & topTable$FDR < 0.05)))
+
+print(paste("up-regulated:", sum(topTable$logFC > 0 & topTable$FDR < 0.05)))
+```
+
+```{r}
+cosa<-topTags(lrt)
+subset(cosa, cosa$table$FDR>.05)
+```
+```{r}
+cosa$table$FDR[cosa$table$FDR>0.5]
+```
+
+
+
+>>>>>>> b63f900d883edf0231fc2585b8c32cc85627aa1b
 # Ejercicios Sesion 4
 
 Extraemos las secuencias que se son up-regulated en el tratamiento y que tuvieron un valor de FDR significativo (<0.05)
