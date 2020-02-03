@@ -233,24 +233,27 @@ print(paste("El numero de bases traslapadas es de:",length(overlaped_hbak),
 
 ```
 
+
+Durante el flujo de trabajo de un proyecto de transcriptómica orientado al análisis de expresión diferencial, posterior al alineamiento de las lecturas limpias, es necesario contar el número de lecturas que alinearon a cada una de las regiones mapeadas. Para realizar este proceso, existen una diversidad de programas tales como **kalisto**, **RSEM**, **Cufflinks**, **HtSeq**, entre otros. El resultado de este proceso es la obtención de una matriz de cuentas en donde las columnas representan las condiciones del experimento (controles y taratamiento), los renglones los genes mapeados y las celdas se llenan con las cuentas de cada gen en las condiciones.
+En el presente experimento, no se realizó en clase el proceso de conteo de las lecturas mapeadas. Sin embargo, se nos dio la matriz de conteos de las muestras.
 # Ejercicios Sesion 4
 
 Extraemos las secuencias que se son up-regulated en el tratamiento y que tuvieron un valor de FDR significativo (<0.05)
 
-```{r }
+```{r echo=F}
 ### lista de secuencias up-regulated
 upreg <- rownames(lrt$table)[topTable$logFC > 0 & topTable$FDR < 0.05]; head(upreg)
 ```
 
 Con las secuencias que obtuvimos extraemos las lineas correspondiente de la tabla original 
 
-```{r}
+```{r echo=F}
 ### tabla de secuencias up-regulated
 upregtab <- counts0[row.names(counts0) %in% upreg,]; head(upregtab)
 ```
 
 Si graficamos la tabla observamos que la mayoría de las secuencias inician con G.
-Esto concuerda con lo conocido para el parásito y nos hace sospechar que estas secuencias provienen de las vesículas.
+Esto concuerda con lo conocido para el nemátodo y nos hace sospechar que más de la mitad de estas secuencias provienen de las vesículas.
 
 ```{r echo=F}
 barplot(table(substr(rownames(upregtab),1,1)))
